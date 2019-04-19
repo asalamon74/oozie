@@ -51,7 +51,7 @@ import org.apache.hadoop.util.Shell;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.yarn.api.ApplicationClientProtocol;
 import org.apache.hadoop.yarn.api.protocolrecords.ApplicationsRequestScope;
 import org.apache.hadoop.yarn.api.protocolrecords.GetApplicationsRequest;
@@ -94,6 +94,9 @@ public abstract class LauncherMain {
      * Its contents are mostly from Hadoop's {@code default-log4j.properties}.
      */
     private static final String DEFAULT_LOG4J_LOCATION = "default-log4j.properties";
+
+    @VisibleForTesting
+    static SystemEnvironment sysenv = new SystemEnvironment();
 
     protected Properties log4jProperties = new Properties();
 
@@ -333,7 +336,7 @@ public abstract class LauncherMain {
      * @return path given environment returns file path
      */
     protected static String getFilePathFromEnv(String env) {
-        String path = System.getenv(env);
+        String path = sysenv.getenv(env);
         if (path != null && Shell.WINDOWS) {
             // In Windows, file paths are enclosed in \" so remove them here
             // to avoid path errors

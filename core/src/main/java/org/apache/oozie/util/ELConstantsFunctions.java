@@ -21,6 +21,7 @@ package org.apache.oozie.util;
 import org.apache.hadoop.conf.Configuration;
 import org.json.simple.JSONValue;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Date;
@@ -158,7 +159,7 @@ public class ELConstantsFunctions {
      * @return the trimmed version of the given string or the empty string if the given string was <code>null</code>
      */
     public static String trim(String input) {
-        return org.apache.commons.lang.StringUtils.trimToEmpty(input);
+        return org.apache.commons.lang3.StringUtils.trimToEmpty(input);
     }
 
     /**
@@ -179,7 +180,7 @@ public class ELConstantsFunctions {
      * @return the encoded <code>String</code>
      */
     public static String urlEncode(String input) {
-        final String encoding = "UTF-8";
+        final String encoding = StandardCharsets.UTF_8.name();
         try {
             return (input == null) ? "" : URLEncoder.encode(input, encoding);
         }

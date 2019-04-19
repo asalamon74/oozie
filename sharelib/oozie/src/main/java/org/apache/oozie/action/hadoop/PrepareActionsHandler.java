@@ -21,6 +21,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -50,7 +51,7 @@ public class PrepareActionsHandler {
      * @throws IOException if there is an IO error during prepare action
      * @throws SAXException in case of xml parsing error
      * @throws ParserConfigurationException if the parser is not well configured
-     * @throws LauncherException in case of error
+     * @throws LauncherException when accessing resource on uri fails
      */
     void prepareAction(String prepareXML, Configuration conf)
             throws IOException, SAXException, ParserConfigurationException, LauncherException {
@@ -103,7 +104,7 @@ public class PrepareActionsHandler {
         docBuilderFactory.setExpandEntityReferences(false);
         docBuilderFactory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
         DocumentBuilder docBuilder = docBuilderFactory.newDocumentBuilder();
-        InputStream is = new ByteArrayInputStream(prepareXML.getBytes("UTF-8"));
+        InputStream is = new ByteArrayInputStream(prepareXML.getBytes(StandardCharsets.UTF_8));
         return docBuilder.parse(is);
     }
 

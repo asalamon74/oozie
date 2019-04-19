@@ -18,17 +18,15 @@
 
 package org.apache.oozie.action.ssh;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Callable;
 
-import com.google.common.base.Charsets;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.hadoop.util.StringUtils;
 
@@ -51,7 +49,7 @@ import org.jdom.JDOMException;
 import org.jdom.Namespace;
 
 /**
- * Ssh action executor. <p> <ul> <li>Execute the shell commands on the remote host</li> <li>Copies the base and wrapper
+ * Ssh action executor. <ul> <li>Execute the shell commands on the remote host</li> <li>Copies the base and wrapper
  * scripts on to the remote location</li> <li>Base script is used to run the command on the remote host</li> <li>Wrapper
  * script is used to check the status of the submitted command</li> <li>handles the submission failures</li> </ul>
  */
@@ -121,7 +119,7 @@ public class SshActionExecutor extends ActionExecutor {
      *
      * @param context action execution context.
      * @param action action object.
-     * @throws org.apache.oozie.action.ActionExecutorException
+     * @throws org.apache.oozie.action.ActionExecutorException in case if action cannot be executed
      */
     @SuppressFBWarnings(value = {"COMMAND_INJECTION", "PATH_TRAVERSAL_OUT"},
             justification = "Tracker URI is specified in the WF action, and action dir path is from context")
@@ -193,7 +191,7 @@ public class SshActionExecutor extends ActionExecutor {
      *
      * @param context action execution context.
      * @param action object.
-     * @throws org.apache.oozie.action.ActionExecutorException
+     * @throws org.apache.oozie.action.ActionExecutorException in case if action cannot be executed
      */
     @Override
     public void kill(Context context, WorkflowAction action) throws ActionExecutorException {
@@ -212,7 +210,7 @@ public class SshActionExecutor extends ActionExecutor {
      *
      * @param context action execution context.
      * @param action action object.
-     * @throws org.apache.oozie.action.ActionExecutorException
+     * @throws org.apache.oozie.action.ActionExecutorException in case if action cannot be executed
      */
     @SuppressWarnings("unchecked")
     @Override
@@ -534,9 +532,9 @@ public class SshActionExecutor extends ActionExecutor {
         }
         try {
             IOUtils.copyCharStream(IOUtils.getResourceAsReader("ssh-base.sh", -1), new OutputStreamWriter(
-                    new FileOutputStream(dirLocation + "/ssh-base.sh"), Charsets.UTF_8));
+                    new FileOutputStream(dirLocation + "/ssh-base.sh"), StandardCharsets.UTF_8));
             IOUtils.copyCharStream(IOUtils.getResourceAsReader("ssh-wrapper.sh", -1), new OutputStreamWriter(
-                    new FileOutputStream(dirLocation + "/ssh-wrapper.sh"), Charsets.UTF_8));
+                    new FileOutputStream(dirLocation + "/ssh-wrapper.sh"), StandardCharsets.UTF_8));
         }
         catch (IOException ie) {
             throw new RuntimeException(XLog.format("Not able to copy required scripts file to {0} "
@@ -547,7 +545,7 @@ public class SshActionExecutor extends ActionExecutor {
     /**
      * Get action status.
      *
-     * @param context
+     * @param context executor context
      * @param action action object.
      * @return status of the action(RUNNING/OK/ERROR).
      * @throws ActionExecutorException thrown if there is any error in getting status.

@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.apache</groupId>
         <artifactId>apache</artifactId>
-        <version>17</version>
+        <version>21</version>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
@@ -104,21 +104,27 @@
          <spark.scala.binary.version>2.10</spark.scala.binary.version>
          <sqoop.classifier>hadoop200</sqoop.classifier>
          <tez.version>0.8.4</tez.version>
+         <joda.time.version>2.9.9</joda.time.version>
 
          <jetty.version>9.3.20.v20170531</jetty.version>
+         <apache.jsp.version>8.0.33</apache.jsp.version>
 
          <jline.version>0.9.94</jline.version>
          <openjpa.version>2.4.2</openjpa.version>
          <xerces.version>2.11.0</xerces.version>
          <curator.version>2.5.0</curator.version>
-         <jackson.version>2.4.2</jackson.version>
+         <jackson.version>2.6.5</jackson.version>
          <log4j.version>1.2.17</log4j.version>
          <activemq.version>5.15.3</activemq.version>
+         <commons.lang3.version>3.3.2</commons.lang3.version>
          <httpcore.version>4.3.3</httpcore.version>
          <httpclient.version>4.3.6</httpclient.version>
          <kyro.version>2.22</kyro.version>
          <javax.servlet.api.version>3.0.1</javax.servlet.api.version>
          <jgit.version>5.0.1.201806211838-r</jgit.version>
+         <spotbugs.annotations.version>3.1.11</spotbugs.annotations.version>
+         <spotbugs-maven-plugin.version>3.1.11</spotbugs-maven-plugin.version>
+         <spotbugs.version>3.1.11</spotbugs.version>
     </properties>
 
     <modules>
@@ -241,6 +247,12 @@
                  <groupId>org.apache.oozie</groupId>
                 <artifactId>oozie-sharelib-hcatalog</artifactId>
                 <version>${project.version}</version>
+                <exclusions>
+                    <exclusion>
+                            <groupId>joda-time</groupId>
+                            <artifactId>joda-time</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                  <groupId>org.apache.oozie</groupId>
@@ -324,11 +336,17 @@
                 <version>1.0</version>
             </dependency>
 
-          <dependency>
-              <groupId>org.slf4j</groupId>
-              <artifactId>slf4j-simple</artifactId>
-              <version>1.6.6</version>
-          </dependency>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-simple</artifactId>
+                <version>1.6.6</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.fasterxml.jackson.module</groupId>
+                <artifactId>jackson-module-scala_${spark.scala.binary.version}</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
 
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
@@ -352,6 +370,12 @@
             <dependency>
                 <groupId>org.apache.hadoop</groupId>
                 <artifactId>hadoop-client</artifactId>
+                <version>${hadoop.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.hadoop</groupId>
+                <artifactId>hadoop-hdfs</artifactId>
                 <version>${hadoop.version}</version>
             </dependency>
 
@@ -507,6 +531,10 @@
                     <exclusion>
                         <groupId>org.apache.hive</groupId>
                         <artifactId>hive-cli</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>joda-time</groupId>
+                        <artifactId>joda-time</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -791,12 +819,6 @@
                         <artifactId>junit</artifactId>
                     </exclusion>
                 </exclusions>
-            </dependency>
-
-            <dependency>
-                <groupId>commons-lang</groupId>
-                <artifactId>commons-lang</artifactId>
-                <version>2.4</version>
             </dependency>
 
             <dependency>
@@ -1350,7 +1372,7 @@
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-lang3</artifactId>
-                <version>3.3.2</version>
+                <version>${commons.lang3.version}</version>
             </dependency>
 
             <dependency>
@@ -1599,12 +1621,6 @@
             </dependency>
 
             <dependency>
-                <groupId>joda-time</groupId>
-                <artifactId>joda-time</artifactId>
-                <version>2.9.9</version>
-            </dependency>
-
-            <dependency>
                 <groupId>com.google.code.gson</groupId>
                 <artifactId>gson</artifactId>
                 <version>2.7</version>
@@ -1615,9 +1631,16 @@
                 <version>3.0</version>
             </dependency>
             <dependency>
-                <groupId>com.google.code.findbugs</groupId>
-                <artifactId>annotations</artifactId>
-                <version>3.0.0</version>
+                <groupId>net.jcip</groupId>
+                <artifactId>jcip-annotations</artifactId>
+                <version>1.0</version>
+                <optional>true</optional>
+            </dependency>
+            <dependency>
+                <groupId>com.github.spotbugs</groupId>
+                <artifactId>spotbugs-annotations</artifactId>
+                <version>${spotbugs.annotations.version}</version>
+                <optional>true</optional>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>
@@ -1787,9 +1810,9 @@
                     <version>3.5.0</version>
                 </plugin>
                 <plugin>
-                    <groupId>org.codehaus.mojo</groupId>
-                    <artifactId>findbugs-maven-plugin</artifactId>
-                    <version>3.0.5</version>
+                    <groupId>com.github.spotbugs</groupId>
+                    <artifactId>spotbugs-maven-plugin</artifactId>
+                    <version>${spotbugs-maven-plugin.version}</version>
                 </plugin>
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
@@ -1800,6 +1823,13 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-clean-plugin</artifactId>
                     <version>3.0.0</version>
+                    <configuration>
+                       <filesets>
+                            <fileset>
+                                <directory>build</directory>
+                            </fileset>
+                       </filesets>
+                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
@@ -1825,25 +1855,24 @@
                 </configuration>
             </plugin>
 
-            <!-- findbugs plugin. Execute 'mvn verify' and look for target/findbugs/findbugsXml.html under each module -->
+            <!-- spotbugs plugin. Execute 'mvn verify' and look for target/spotbugs/spotbugsXml.html under each module -->
             <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>findbugs-maven-plugin</artifactId>
+                <groupId>com.github.spotbugs</groupId>
+                <artifactId>spotbugs-maven-plugin</artifactId>
                 <configuration>
                     <excludeSubProjects>false</excludeSubProjects>
                     <xmlOutput>true</xmlOutput>
-                    <findbugsXmlOutput>true</findbugsXmlOutput>
-                    <findbugsXmlWithMessages>true</findbugsXmlWithMessages>
+                    <spotbugsXmlOutput>true</spotbugsXmlOutput>
                     <effort>Max</effort>
                     <failOnError>false</failOnError>
                     <threshold>Low</threshold>
                     <xmlOutput>true</xmlOutput>
-                    <findbugsXmlOutputDirectory>${project.build.directory}/findbugs</findbugsXmlOutputDirectory>
+                    <spotbugsXmlOutputDirectory>${project.build.directory}/spotbugs</spotbugsXmlOutputDirectory>
                     <plugins>
                         <plugin>
                             <groupId>com.h3xstream.findsecbugs</groupId>
                             <artifactId>findsecbugs-plugin</artifactId>
-                            <version>1.7.1</version>
+                            <version>1.8.0</version>
                         </plugin>
                     </plugins>
                 </configuration>
@@ -1851,7 +1880,7 @@
                     <dependency>
                         <groupId>com.github.spotbugs</groupId>
                         <artifactId>spotbugs</artifactId>
-                        <version>3.1.1</version>
+                        <version>${spotbugs.version}</version>
                     </dependency>
                 </dependencies>
                 <executions>
@@ -1864,7 +1893,7 @@
                  </execution>
              </executions>
             </plugin>
-            <!-- xml plugin is used for transforming the findbugs xml output into a friendlier html page -->
+            <!-- xml plugin is used for transforming the spotbugs xml output into a friendlier html page -->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>xml-maven-plugin</artifactId>
@@ -1872,8 +1901,8 @@
                     <excludeSubProjects>false</excludeSubProjects>
                     <transformationSets>
                         <transformationSet>
-                            <dir>${project.build.directory}/findbugs</dir>
-                            <outputDir>${project.build.directory}/findbugs</outputDir>
+                            <dir>${project.build.directory}/spotbugs</dir>
+                            <outputDir>${project.build.directory}/spotbugs</outputDir>
                             <stylesheet>fancy-hist.xsl</stylesheet>
                             <excludes>
                                 <exclude>**/findsecbugs*.jar</exclude>
@@ -1897,9 +1926,9 @@
                 </executions>
                 <dependencies>
                     <dependency>
-                        <groupId>com.google.code.findbugs</groupId>
-                        <artifactId>findbugs</artifactId>
-                        <version>3.0.1</version>
+                        <groupId>com.github.spotbugs</groupId>
+                        <artifactId>spotbugs</artifactId>
+                        <version>${spotbugs.version}</version>
                     </dependency>
                 </dependencies>
             </plugin>

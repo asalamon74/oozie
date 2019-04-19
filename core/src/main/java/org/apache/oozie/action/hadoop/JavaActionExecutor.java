@@ -22,7 +22,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.io.Closeables;
 import com.google.common.primitives.Ints;
 
 import java.io.File;
@@ -171,8 +170,10 @@ public class JavaActionExecutor extends ActionExecutor {
             OozieClient.USER_NAME, MRJobConfig.USER_NAME, HADOOP_NAME_NODE, HADOOP_YARN_RM
     );
     private static final String OOZIE_ACTION_NAME = "oozie.action.name";
-    private final static String ACTION_SHARELIB_FOR = "oozie.action.sharelib.for.";
-    public static final String OOZIE_ACTION_DEPENDENCY_DEDUPLICATE = "oozie.action.dependency.deduplicate";
+    private static final String OOZIE_ACTION_DEPENDENCY_DEDUPLICATE = "oozie.action.dependency.deduplicate";
+
+    static final String ACTION_SHARELIB_FOR = "oozie.action.sharelib.for.";
+    static final String SHARELIB_EXCLUDE_SUFFIX = ".exclude";
 
     /**
      * Heap to physical memory ration for {@link LauncherAM}, in order its YARN container doesn't get killed before physical memory
@@ -209,6 +210,7 @@ public class JavaActionExecutor extends ActionExecutor {
     private static final String JAVA_TMP_DIR_SETTINGS = "-Djava.io.tmpdir=";
 
     private static DependencyDeduplicator dependencyDeduplicator = new DependencyDeduplicator();
+    private ShareLibExcluder shareLibExcluder = null;
 
     public XConfiguration workflowConf = null;
 
@@ -467,7 +469,7 @@ public class JavaActionExecutor extends ActionExecutor {
 
     /**
      * Set root log level property in actionConf
-     * @param actionConf
+     * @param actionConf action configuration
      */
     void setRootLoggerLevel(Configuration actionConf) {
         String oozieActionTypeRootLogger = "oozie.action." + getType() + LauncherAMUtils.ROOT_LOGGER_LEVEL;
@@ -695,7 +697,7 @@ public class JavaActionExecutor extends ActionExecutor {
             if (FSUtils.isLocalFile(libPath.toString())) {
                 conf = ClasspathUtils.addToClasspathFromLocalShareLib(conf, libPath);
             }
-            else {
+            else if (!shareLibExcluder.shouldExclude(libPath.toUri())) {
                 if (isAddToCache) {
                     addToCache(conf, libPath, libPath.toUri().getPath(), false);
                 }
@@ -708,7 +710,16 @@ public class JavaActionExecutor extends ActionExecutor {
         }
     }
 
-    protected void addActionLibs(Path appPath, Configuration conf) throws ActionExecutorException {
+    private void addFilesToCacheIfNotExcluded(Path appPath, Configuration conf, FileStatus[] files) throws ActionExecutorException {
+        if (files == null) return;
+        for (FileStatus file : files) {
+            if (!shareLibExcluder.shouldExclude(file.getPath().toUri())) {
+                addToCache(conf, appPath, file.getPath().toUri().getPath(), false);
+            }
+        }
+    }
+
+    private void addActionLibs(Path appPath, Configuration conf) throws ActionExecutorException {
         String[] actionLibsStrArr = conf.getStrings("oozie.launcher.oozie.libpath");
         if (actionLibsStrArr != null) {
             try {
@@ -721,10 +732,7 @@ public class JavaActionExecutor extends ActionExecutor {
                         FileSystem fs = Services.get().get(HadoopAccessorService.class).createFileSystem(user,
                                 appPath.toUri(), conf);
                         if (fs.exists(actionLibsPath)) {
-                            FileStatus[] files = fs.listStatus(actionLibsPath);
-                            for (FileStatus file : files) {
-                                addToCache(conf, appPath, file.getPath().toUri().getPath(), false);
-                            }
+                            addFilesToCacheIfNotExcluded(appPath, conf, fs.listStatus(actionLibsPath));
                         }
                     }
                 }
@@ -740,22 +748,42 @@ public class JavaActionExecutor extends ActionExecutor {
         }
     }
 
+    private void initShareLibExcluder(Configuration conf, Context context) throws ActionExecutorException {
+        XConfiguration wfJobConf = null;
+        try {
+            wfJobConf = getWorkflowConf(context);
+        }
+        catch (IOException e) {
+            throw new ActionExecutorException(ActionExecutorException.ErrorType.FAILED,
+                    "Failed to acquire workflow configuration from context.", e.getMessage());
+        }
+        LOG.info("Initializing sharelib excluder for action if specified.");
+        shareLibExcluder = new ShareLibExcluder(conf, Services.get().getConf(), wfJobConf, getType(), getSharelibRoot());
+    }
+
     @SuppressWarnings("unchecked")
     public void setLibFilesArchives(Context context, Element actionXml, Path appPath, Configuration conf)
             throws ActionExecutorException {
-        Configuration proto = context.getProtoActionConf();
 
-        // Workflow lib/
+        addWfApplicationLibs(appPath, conf, context.getProtoActionConf());
+        addActionXmlFilesAndArchives(actionXml, appPath, conf);
+
+        initShareLibExcluder(conf, context);
+
+        addActionLibs(appPath, conf);
+        addAllShareLibs(appPath, conf, context, actionXml);
+    }
+
+    private void addWfApplicationLibs(Path appPath, Configuration conf, Configuration proto) throws ActionExecutorException {
         String[] paths = proto.getStrings(WorkflowAppService.APP_LIB_PATH_LIST);
         if (paths != null) {
             for (String path : paths) {
                 addToCache(conf, appPath, path, false);
             }
         }
+    }
 
-        // Action libs
-        addActionLibs(appPath, conf);
-
+    private void addActionXmlFilesAndArchives(Element actionXml, Path appPath, Configuration conf) throws ActionExecutorException {
         // files and archives defined in the action
         for (Element eProp : (List<Element>) actionXml.getChildren()) {
             if (eProp.getName().equals("file")) {
@@ -771,8 +799,6 @@ public class JavaActionExecutor extends ActionExecutor {
                 }
             }
         }
-
-        addAllShareLibs(appPath, conf, context, actionXml);
     }
 
     @VisibleForTesting
@@ -1107,7 +1133,7 @@ public class JavaActionExecutor extends ActionExecutor {
         }
         finally {
             if (yarnClient != null) {
-                Closeables.closeQuietly(yarnClient);
+                IOUtils.closeQuietly(yarnClient);
             }
         }
     }
@@ -1129,6 +1155,27 @@ public class JavaActionExecutor extends ActionExecutor {
             LOG.debug(String.format("Unset [%s] inserted from default Oozie resource XML [%s]",
                     HbaseCredentials.HBASE_USE_DYNAMIC_JARS, HbaseCredentials.OOZIE_HBASE_CLIENT_SITE_XML));
         }
+    }
+
+    private URI getSharelibRoot() {
+        ShareLibService shareLibService = Services.get().get(ShareLibService.class);
+        if (shareLibService == null) {
+            LOG.warn("ShareLibService is not configured, no root can be found");
+            return null;
+        }
+        try {
+            Path shareLibRootPath = shareLibService.getShareLibRootPath();
+            if (shareLibRootPath != null) {
+                return shareLibRootPath.toUri();
+            }
+            else {
+                LOG.warn("ShareLib root not found");
+            }
+        }
+        catch (IOException e) {
+            LOG.warn("ShareLib root not found", e);
+        }
+        return null;
     }
 
     private void addAppNameContext(final Context context, final WorkflowAction action) {
@@ -1618,10 +1665,10 @@ public class JavaActionExecutor extends ActionExecutor {
     /**
      * Create job client object
      *
-     * @param context
-     * @param jobConf
+     * @param context executor context
+     * @param jobConf job configuration
      * @return JobClient
-     * @throws HadoopAccessorException
+     * @throws HadoopAccessorException if FS is not accessible
      */
     protected JobClient createJobClient(Context context, Configuration jobConf) throws HadoopAccessorException {
         String user = context.getWorkflow().getUser();
@@ -1631,10 +1678,10 @@ public class JavaActionExecutor extends ActionExecutor {
     /**
      * Create yarn client object
      *
-     * @param context
-     * @param jobConf
+     * @param context executor context
+     * @param jobConf job configuration
      * @return YarnClient
-     * @throws HadoopAccessorException
+     * @throws HadoopAccessorException if FS is not accessible
      */
     protected YarnClient createYarnClient(Context context, Configuration jobConf) throws HadoopAccessorException {
         String user = context.getWorkflow().getUser();
@@ -1645,7 +1692,7 @@ public class JavaActionExecutor extends ActionExecutor {
      * Useful for overriding in actions that do subsequent job runs
      * such as the MapReduce Action, where the launcher job is not the
      * actual job that then gets monitored.
-     * @param action
+     * @param action workflow action
      * @return external ID.
      */
     protected String getActualExternalId(WorkflowAction action) {
@@ -1817,7 +1864,7 @@ public class JavaActionExecutor extends ActionExecutor {
      * @param context the execution context
      * @param action the workflow action
      * @return a {@code String} that depicts the application ID of the launcher ApplicationMaster of this action
-     * @throws ActionExecutorException
+     * @throws ActionExecutorException never thrown using current implementation
      */
     protected String findYarnApplicationId(final Context context, final WorkflowAction action)
             throws ActionExecutorException {
@@ -1830,10 +1877,10 @@ public class JavaActionExecutor extends ActionExecutor {
      * @param actionFs the FileSystem object
      * @param action the Workflow action
      * @param context executor context
-     * @throws org.apache.oozie.service.HadoopAccessorException
-     * @throws org.jdom.JDOMException
-     * @throws java.io.IOException
-     * @throws java.net.URISyntaxException
+     * @throws org.apache.oozie.service.HadoopAccessorException if FS is not accessible
+     * @throws org.jdom.JDOMException if XML parsing error occurs
+     * @throws java.io.IOException if IO error occurs
+     * @throws java.net.URISyntaxException if processed uri is not a proper URI
      *
      */
     protected void getActionData(FileSystem actionFs, WorkflowAction action, Context context)
@@ -1871,7 +1918,7 @@ public class JavaActionExecutor extends ActionExecutor {
             try {
                 FileSystem actionFs = context.getAppFileSystem();
                 cleanUpActionDir(actionFs, context);
-                Closeables.closeQuietly(yarnClient);
+                IOUtils.closeQuietly(yarnClient);
             } catch (Exception ex) {
                 LOG.error("Error when cleaning up action dir", ex);
                 throw convertException(ex);
@@ -1997,9 +2044,9 @@ public class JavaActionExecutor extends ActionExecutor {
      *
      * @param context executor context
      * @param actionFs the FileSystem object
-     * @throws java.io.IOException
-     * @throws org.apache.oozie.service.HadoopAccessorException
-     * @throws java.net.URISyntaxException
+     * @throws java.io.IOException if IO error occurs
+     * @throws org.apache.oozie.service.HadoopAccessorException if FS is not accessible
+     * @throws java.net.URISyntaxException if processed uri is not a proper URI
      */
     protected void setActionCompletionData(Context context, FileSystem actionFs) throws IOException,
             HadoopAccessorException, URISyntaxException {

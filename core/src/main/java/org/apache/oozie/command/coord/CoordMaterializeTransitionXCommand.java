@@ -18,7 +18,7 @@
 
 package org.apache.oozie.command.coord;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.oozie.AppType;
 import org.apache.oozie.CoordinatorActionBean;
@@ -368,6 +368,7 @@ public class CoordMaterializeTransitionXCommand extends MaterializeTransitionXCo
      * Create action instances starting from "startMatdTime" to "endMatdTime" and store them into coord action table.
      *
      * @param dryrun if this is a dry run
+     * @return materialized action(s)
      * @throws Exception thrown if failed to materialize actions
      */
     protected String materializeActions(boolean dryrun) throws Exception {

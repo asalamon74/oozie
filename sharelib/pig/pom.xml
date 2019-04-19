@@ -39,6 +39,12 @@
 
     <dependencies>
         <dependency>
+            <groupId>joda-time</groupId>
+            <artifactId>joda-time</artifactId>
+            <version>${joda.time.version}</version>
+        </dependency>
+
+        <dependency>
             <groupId>org.apache.pig</groupId>
             <artifactId>pig</artifactId>
             <classifier>${pig.classifier}</classifier>
@@ -50,6 +56,7 @@
             <artifactId>jline</artifactId>
             <scope>compile</scope>
         </dependency>
+
         <dependency>
             <groupId>org.python</groupId>
             <artifactId>jython-standalone</artifactId>
@@ -84,7 +91,6 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
-            <scope>test</scope>
         </dependency>
 
         <dependency>
@@ -110,11 +116,6 @@
         <dependency>
            <groupId>dk.brics.automaton</groupId>
             <artifactId>automaton</artifactId>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>joda-time</groupId>
-            <artifactId>joda-time</artifactId>
             <scope>compile</scope>
         </dependency>
         <dependency>

@@ -24,16 +24,16 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.LinkedHashSet;
 
-import com.google.common.base.Charsets;
 import com.google.common.collect.Sets;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -193,7 +193,7 @@ public class AuthorizationService implements Service {
             if (file.exists()) {
                 try {
                     BufferedReader br = new BufferedReader(
-                            new InputStreamReader(new FileInputStream(file), Charsets.UTF_8));
+                            new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8));
                     try {
                         String line = br.readLine();
                         while (line != null) {
@@ -267,8 +267,8 @@ public class AuthorizationService implements Service {
     }
 
     /**
-     * Check if the user belongs to the group or not. <p> <p> Subclasses should override the {@link #isUserInGroup}
-     * method.
+     * Check if the user belongs to the group or not. <p> Subclasses should override the {@link #isUserInGroup}
+     * method. <p>
      *
      * @param user user name.
      * @param group group name.
@@ -362,6 +362,7 @@ public class AuthorizationService implements Service {
      * @param user user name.
      * @param group group name.
      * @param appPath application path.
+     * @param jobConf job configuration
      * @throws AuthorizationException thrown if the user is not authorized for the app.
      */
     public void authorizeForApp(String user, String group, String appPath, Configuration jobConf)
@@ -411,7 +412,7 @@ public class AuthorizationService implements Service {
      * @param group group name.
      * @param appPath application path.
      * @param fileName workflow or coordinator.xml
-     * @param conf
+     * @param conf configuration
      * @throws AuthorizationException thrown if the user is not authorized for the app.
      */
     public void authorizeForApp(String user, String group, String appPath, String fileName, Configuration conf)
@@ -562,6 +563,7 @@ public class AuthorizationService implements Service {
      *
      * @param user user name.
      * @param filter filter used to select jobs
+     * @param jobType job type
      * @param start starting index of the jobs in DB
      * @param len maximum amount of jobs to select
      * @param write indicates if the check is for read or write job tasks.

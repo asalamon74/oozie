@@ -18,7 +18,6 @@
 
 package org.apache.oozie.service;
 
-import com.google.common.base.Charsets;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
@@ -38,6 +37,7 @@ import java.io.Reader;
 import java.io.StringWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -107,6 +107,7 @@ public abstract class WorkflowAppService implements Service {
      *
      * @param appPath application path.
      * @param user user name.
+     * @param conf configuration
      * @return workflow definition.
      * @throws WorkflowException thrown if the definition could not be read.
      */
@@ -129,7 +130,7 @@ public abstract class WorkflowAppService implements Service {
                 throw new WorkflowException(ErrorCode.E0736, fsStatus.getLen(), this.maxWFLength);
             }
 
-            Reader reader = new InputStreamReader(fs.open(path), Charsets.UTF_8);
+            Reader reader = new InputStreamReader(fs.open(path), StandardCharsets.UTF_8);
             StringWriter writer = new StringWriter();
             IOUtils.copyCharStream(reader, writer);
             return writer.toString();
@@ -262,9 +263,9 @@ public abstract class WorkflowAppService implements Service {
     /**
      * Parse workflow definition.
      *
-     * @param jobConf
+     * @param jobConf job configuration
      * @return WorkflowApp
-     * @throws WorkflowException
+     * @throws WorkflowException thrown if the workflow application could not be parsed.
      */
     public abstract WorkflowApp parseDef(Configuration jobConf) throws WorkflowException;
 
@@ -275,7 +276,7 @@ public abstract class WorkflowAppService implements Service {
      * @param configDefault config from config-default.xml
      * @return workflow application thrown if the workflow application could not
      *         be parsed
-     * @throws WorkflowException
+     * @throws WorkflowException thrown if the workflow application could not be parsed.
      */
     public abstract WorkflowApp parseDef(Configuration jobConf, Configuration configDefault) throws WorkflowException;
 

@@ -19,7 +19,7 @@
 package org.apache.oozie.workflow.lite;
 
 import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.Writable;
 import org.apache.oozie.ErrorCode;
@@ -160,9 +160,11 @@ public class LiteWorkflowAppParser {
     /**
      * Parse and validate xml to {@link LiteWorkflowApp}
      *
-     * @param reader
+     * @param reader configuration reader
+     * @param jobConf job configuration
+     * @param configDefault default configuration
      * @return LiteWorkflowApp
-     * @throws WorkflowException
+     * @throws WorkflowException if workflow related issue occurs
      */
     public LiteWorkflowApp validateAndParse(Reader reader, Configuration jobConf, Configuration configDefault)
             throws WorkflowException {
@@ -210,12 +212,12 @@ public class LiteWorkflowAppParser {
     /**
      * Parse xml to {@link LiteWorkflowApp}
      *
-     * @param strDef
-     * @param root
-     * @param configDefault
-     * @param jobConf
+     * @param strDef definition
+     * @param root root xml element
+     * @param configDefault default configuration
+     * @param jobConf job configuration
      * @return LiteWorkflowApp
-     * @throws WorkflowException
+     * @throws WorkflowException if workflow related issue occurs
      */
     @SuppressWarnings({"unchecked"})
     private LiteWorkflowApp parse(String strDef, Element root, Configuration configDefault, Configuration jobConf)
@@ -324,9 +326,9 @@ public class LiteWorkflowAppParser {
 
     /**
      * Read the GlobalSectionData from Base64 string.
-     * @param globalStr
+     * @param globalStr string value of global section
      * @return GlobalSectionData
-     * @throws WorkflowException
+     * @throws WorkflowException if workflow related issue occurs
      */
     private GlobalSectionData getGlobalFromString(String globalStr) throws WorkflowException {
         GlobalSectionData globalSectionData = new GlobalSectionData();
@@ -345,9 +347,9 @@ public class LiteWorkflowAppParser {
 
     /**
      * Write the GlobalSectionData to a Base64 string.
-     * @param globalSectionData
+     * @param globalSectionData string value of global section
      * @return String
-     * @throws WorkflowException
+     * @throws WorkflowException if workflow related issue occurs
      */
     private String getGlobalString(GlobalSectionData globalSectionData) throws WorkflowException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();

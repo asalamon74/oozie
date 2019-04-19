@@ -18,7 +18,6 @@
 
 package org.apache.oozie.util;
 
-import com.google.common.base.Charsets;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.oozie.service.ConfigurationService;
 import org.apache.oozie.service.Services;
@@ -38,6 +37,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Properties;
 import java.util.regex.Matcher;
@@ -367,7 +367,7 @@ public class XConfiguration extends Configuration {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             this.writeXml(baos);
             baos.close();
-            xml = new String(baos.toByteArray(), Charsets.UTF_8);
+            xml = new String(baos.toByteArray(), StandardCharsets.UTF_8);
         }
         catch (IOException ex) {
             throw new RuntimeException("Xml writing failed, " + ex.getMessage(), ex);
@@ -415,7 +415,7 @@ public class XConfiguration extends Configuration {
 
     /**
      * Restrict the parser
-     * @param restrictParser
+     * @param restrictParser set to true if parser restriction needed
      */
     public void setRestrictParser(boolean restrictParser) {
      this.restrictParser = restrictParser;
@@ -426,7 +426,7 @@ public class XConfiguration extends Configuration {
     }
     /**
      * Restrict reading property from System.getProperty()
-     * @param restrictSystemProperties
+     * @param restrictSystemProperties set to true if system property parsing needed
      */
     public void setRestrictSystemProperties(boolean restrictSystemProperties) {
         this.restrictSystemProperties = restrictSystemProperties;

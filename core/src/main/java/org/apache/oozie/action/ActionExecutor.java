@@ -18,8 +18,7 @@
 
 package org.apache.oozie.action;
 
-import com.google.common.base.Charsets;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.conf.Configuration;
@@ -37,6 +36,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -208,9 +208,9 @@ public abstract class ActionExecutor {
 
         /**
          * @return filesystem handle for the application deployment fs.
-         * @throws IOException
-         * @throws URISyntaxException
-         * @throws HadoopAccessorException
+         * @throws IOException if IO error occurs
+         * @throws URISyntaxException if processed uri is not a proper URI
+         * @throws HadoopAccessorException if accessing hadoop fails
          */
         FileSystem getAppFileSystem() throws HadoopAccessorException, IOException, URISyntaxException;
 
@@ -353,8 +353,8 @@ public abstract class ActionExecutor {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
             try {
-                err.printStackTrace(new PrintStream(baos, false, Charsets.UTF_8.name()));
-                XLog.getLog(getClass()).warn(baos.toString(Charsets.UTF_8.name()));
+                err.printStackTrace(new PrintStream(baos, false, StandardCharsets.UTF_8.name()));
+                XLog.getLog(getClass()).warn(baos.toString(StandardCharsets.UTF_8.name()));
             } catch (UnsupportedEncodingException e) {
                 throw new RuntimeException(e);
             }

@@ -35,7 +35,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
@@ -255,7 +255,7 @@ public class V1JobsServlet extends BaseJobsServlet {
             return true;
         }
         catch (final URISyntaxException | IOException | HadoopAccessorException e) {
-            LOG.warn("Could not write XML [%s] to HDFS. Error message: %s", appPathWithFileName, e.getMessage());
+            LOG.warn("Could not write XML [{0}] to HDFS. Error message: {1}", appPathWithFileName, e.getMessage());
             return false;
         }
     }
@@ -584,11 +584,12 @@ public class V1JobsServlet extends BaseJobsServlet {
 
     /**
      * service implementation to bulk kill jobs
-     * @param request
-     * @param response
+     * @param request the request
+     * @param response the response
      * @return bulkModifyJobs implementation to bulk kill jobs
-     * @throws XServletException
-     * @throws IOException
+     * @throws XServletException in case if
+     * BundleEngineException or CoordinatorEngineException or DagEngineException occurs
+     * @throws IOException in case of parsing error
      */
     @Override
     protected JSONObject killJobs(HttpServletRequest request, HttpServletResponse response) throws XServletException,
@@ -598,11 +599,12 @@ public class V1JobsServlet extends BaseJobsServlet {
 
     /**
      * service implementation to bulk suspend jobs
-     * @param request
-     * @param response
+     * @param request the request
+     * @param response the response
      * @return bulkModifyJobs implementation to bulk suspend jobs
-     * @throws XServletException
-     * @throws IOException
+     * @throws XServletException in case if
+     * BundleEngineException or CoordinatorEngineException or DagEngineException occurs
+     * @throws IOException in case of parsing error
      */
     @Override
     protected JSONObject suspendJobs(HttpServletRequest request, HttpServletResponse response) throws XServletException,
@@ -612,11 +614,12 @@ public class V1JobsServlet extends BaseJobsServlet {
 
     /**
      * service implementation to bulk resume jobs
-     * @param request
-     * @param response
+     * @param request the request
+     * @param response the response
      * @return bulkModifyJobs implementation to bulk resume jobs
-     * @throws XServletException
-     * @throws IOException
+     * @throws XServletException in case if
+     * BundleEngineException or CoordinatorEngineException or DagEngineException occurs
+     * @throws IOException in case of parsing error
      */
     @Override
     protected JSONObject resumeJobs(HttpServletRequest request, HttpServletResponse response) throws XServletException,

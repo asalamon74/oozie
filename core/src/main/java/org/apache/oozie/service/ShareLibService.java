@@ -27,6 +27,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.text.MessageFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -44,7 +45,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.Map.Entry;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
@@ -494,7 +495,7 @@ public class ShareLibService implements Service, Instrumentable {
                         // that they are kept sacred during the decoding
                         // process.
                         toReturn = toReturn.replaceAll("\\+", "%2B");
-                        toReturn = URLDecoder.decode(toReturn, "UTF-8");
+                        toReturn = URLDecoder.decode(toReturn, StandardCharsets.UTF_8.name());
                         toReturn = toReturn.replaceAll("!.*$", "");
                         return toReturn;
                     }
@@ -615,6 +616,20 @@ public class ShareLibService implements Service, Instrumentable {
         symlinkMapping = tmpSymlinkMapping;
         shareLibConfigMap = tmpShareLibConfigMap;
         return status;
+    }
+
+    /**
+     * Get the latest share lib root path
+     *
+     * @return share lib root Path
+     * @throws IOException Signals that the Oozie share lib root path could not be reached.
+     */
+    public Path getShareLibRootPath() throws IOException {
+        Path shareLibpath = getLatestLibPath(Services.get().get(WorkflowAppService.class).getSystemLibPath(), SHARE_LIB_PREFIX);
+        if (shareLibpath == null){
+            LOG.info("No share lib directory found");
+        }
+        return shareLibpath;
     }
 
     /**
