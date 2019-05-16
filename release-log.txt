@@ -1,5 +1,12 @@
 -- Oozie 5.2.0 release (trunk - unreleased)
 
+OOZIE-3478 Oozie needs execute permission on the submitting users home directory (asalamon74 via gezapeti, pbacsko, kmarton)
+OOZIE-3393 Add Oozie instrumentation delayed metric in CoordMaterializeTriggerService (zuston via asalamon74)
+OOZIE-3477 Fix parameter checking in WorkflowStore.getWorkflowCountWithStatusInLastNSeconds (zuston via asalamon74)
+OOZIE-3470 PurgeXCommand coordActionDel variable assignment should be standardized (zuston via asalamon74)
+OOZIE-3463 Migrate from com.google.common.base.Charsets to java.nio.charset.StandardCharsets (nobigo via kmarton)
+OOZIE-3467 Migrate from com.google.common.base.Stopwatch (asalamon74 via kmarton)
+OOZIE-3466 Migrate from com.google.common.io.Closeables to org.apache.commons.io.IOUtils (asalamon74 via kmarton)
 OOZIE-3249 [tools] Instrumentation log parser (andras.piros via asalamon74)
 OOZIE-3460 Remove pom files from Oozie sharelibs (nobigo via asalamon74)
 OOZIE-3450 Investigate and clean git sharelib (matijhs via asalamon74)

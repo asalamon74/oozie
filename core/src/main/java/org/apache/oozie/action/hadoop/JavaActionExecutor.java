@@ -22,7 +22,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.io.Closeables;
 import com.google.common.primitives.Ints;
 
 import java.io.File;
@@ -34,6 +33,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
+import java.security.PrivilegedExceptionAction;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -97,6 +97,7 @@ import org.apache.oozie.service.HadoopAccessorService;
 import org.apache.oozie.service.Services;
 import org.apache.oozie.service.ShareLibService;
 import org.apache.oozie.service.URIHandlerService;
+import org.apache.oozie.service.UserGroupInformationService;
 import org.apache.oozie.service.WorkflowAppService;
 import org.apache.oozie.util.ClasspathUtils;
 import org.apache.oozie.util.ELEvaluationException;
@@ -1134,7 +1135,7 @@ public class JavaActionExecutor extends ActionExecutor {
         }
         finally {
             if (yarnClient != null) {
-                Closeables.closeQuietly(yarnClient);
+                IOUtils.closeQuietly(yarnClient);
             }
         }
     }
@@ -1206,7 +1207,7 @@ public class JavaActionExecutor extends ActionExecutor {
                                                                     final WorkflowAction action,
                                                                     final Credentials credentials,
                                                                     final Element actionXml)
-            throws IOException, HadoopAccessorException, URISyntaxException {
+            throws IOException, HadoopAccessorException, URISyntaxException, InterruptedException {
 
         ApplicationSubmissionContext appContext = Records.newRecord(ApplicationSubmissionContext.class);
 
@@ -1224,9 +1225,20 @@ public class JavaActionExecutor extends ActionExecutor {
 
         final String user = actionContext.getWorkflow().getUser();
         // Set the resources to localize
-        Map<String, LocalResource> localResources = new HashMap<String, LocalResource>();
-        ClientDistributedCacheManager.determineTimestampsAndCacheVisibilities(launcherJobConf);
-        MRApps.setupDistributedCache(launcherJobConf, localResources);
+        Map<String, LocalResource> localResources = new HashMap<>();
+        // Executing code inside a doAs so we don't need execute permission for oozie user
+        // on the home directory of the submitting user
+        final UserGroupInformationService ugiService = Services.get().get(UserGroupInformationService.class);
+        final UserGroupInformation ugi = ugiService.getProxyUser(user);
+        ugi.doAs(new PrivilegedExceptionAction<Object>() {
+            public Object run() throws Exception {
+                setEnvironmentVariables(launcherJobConf, amContainer);
+                ClientDistributedCacheManager.determineTimestampsAndCacheVisibilities(launcherJobConf);
+                MRApps.setupDistributedCache(launcherJobConf, localResources);
+                return null;
+            }
+        });
+
         // Add the Launcher and Action configs as Resources
         HadoopAccessorService has = Services.get().get(HadoopAccessorService.class);
         launcherJobConf.set(LauncherAM.OOZIE_SUBMITTER_USER, user);
@@ -1238,7 +1250,6 @@ public class JavaActionExecutor extends ActionExecutor {
         localResources.put(LauncherAM.ACTION_CONF_XML, actionConfLR);
         amContainer.setLocalResources(localResources);
 
-        setEnvironmentVariables(launcherJobConf, amContainer);
 
         List<String> vargs = createCommand(launcherJobConf, actionContext);
         setJavaOpts(launcherJobConf, actionXml, vargs);
@@ -1919,7 +1930,7 @@ public class JavaActionExecutor extends ActionExecutor {
             try {
                 FileSystem actionFs = context.getAppFileSystem();
                 cleanUpActionDir(actionFs, context);
-                Closeables.closeQuietly(yarnClient);
+                IOUtils.closeQuietly(yarnClient);
             } catch (Exception ex) {
                 LOG.error("Error when cleaning up action dir", ex);
                 throw convertException(ex);
