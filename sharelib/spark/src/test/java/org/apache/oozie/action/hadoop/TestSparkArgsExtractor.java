@@ -18,18 +18,21 @@
 
 package org.apache.oozie.action.hadoop;
 
-import com.google.common.collect.Lists;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.junit.After;
 import org.junit.Test;
 
 import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
-import java.net.URI;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.Reader;
+import java.io.Writer;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -58,7 +61,7 @@ public class TestSparkArgsExtractor {
 
         new SparkArgsExtractor(actionConf).appendOoziePropertiesToSparkConf(sparkArgs);
 
-        assertEquals(Lists.newArrayList("--conf", "spark.oozie.bar=bar"), sparkArgs);
+        assertEquals(Arrays.asList("--conf", "spark.oozie.bar=bar"), sparkArgs);
     }
 
     @Test
@@ -80,7 +83,7 @@ public class TestSparkArgsExtractor {
         final List<String> sparkArgs = new SparkArgsExtractor(actionConf).extract(mainArgs);
 
         assertEquals("Spark args mismatch",
-                Lists.newArrayList("--master", "local[*]",
+                Arrays.asList("--master", "local[*]",
                         "--deploy-mode", "client",
                         "--name", "Spark Copy File",
                         "--class", "org.apache.oozie.example.SparkFileCopy",
@@ -124,7 +127,7 @@ public class TestSparkArgsExtractor {
         final List<String> sparkArgs = new SparkArgsExtractor(actionConf).extract(mainArgs);
 
         assertEquals("Spark args mismatch",
-                Lists.newArrayList("--master", "yarn",
+                Arrays.asList("--master", "yarn",
                         "--deploy-mode", "client",
                         "--name", "Spark Copy File",
                         "--class", "org.apache.oozie.example.SparkFileCopy",
@@ -168,7 +171,7 @@ public class TestSparkArgsExtractor {
         final List<String> sparkArgs = new SparkArgsExtractor(actionConf).extract(mainArgs);
 
         assertEquals("Spark args mismatch",
-                Lists.newArrayList("--master", "yarn",
+                Arrays.asList("--master", "yarn",
                         "--deploy-mode", "client",
                         "--name", "Spark Copy File",
                         "--class", "org.apache.oozie.example.SparkFileCopy",
@@ -206,7 +209,7 @@ public class TestSparkArgsExtractor {
         final List<String> sparkArgs = new SparkArgsExtractor(actionConf).extract(mainArgs);
 
         assertEquals("Spark args mismatch",
-                Lists.newArrayList("--master", "yarn",
+                Arrays.asList("--master", "yarn",
                         "--deploy-mode", "client",
                         "--name", "Spark Copy File",
                         "--class", "org.apache.oozie.example.SparkFileCopy",
@@ -245,7 +248,7 @@ public class TestSparkArgsExtractor {
         final List<String> sparkArgs = new SparkArgsExtractor(actionConf).extract(mainArgs);
 
         assertEquals("Spark args mismatch",
-                Lists.newArrayList("--master", "yarn",
+                Arrays.asList("--master", "yarn",
                         "--deploy-mode", "client",
                         "--name", "Spark Copy File",
                         "--class", "org.apache.oozie.example.SparkFileCopy",
@@ -289,7 +292,7 @@ public class TestSparkArgsExtractor {
         final List<String> sparkArgs = new SparkArgsExtractor(actionConf).extract(mainArgs);
 
         assertEquals("Spark args mismatch",
-                Lists.newArrayList("--master", "yarn",
+                Arrays.asList("--master", "yarn",
                         "--deploy-mode", "client",
                         "--name", "Spark Copy File",
                         "--class", "org.apache.oozie.example.SparkFileCopy",
@@ -349,7 +352,7 @@ public class TestSparkArgsExtractor {
         assertEquals("property foo3 should've been overwritten by user-defined foo.properties",
                 "barbar", p.get("foo3"));
         assertEquals("Spark args mismatch",
-                Lists.newArrayList("--master", "yarn", "--deploy-mode", "client", "--name", "Spark Copy File",
+                Arrays.asList("--master", "yarn", "--deploy-mode", "client", "--name", "Spark Copy File",
                         "--class", "org.apache.oozie.example.SparkFileCopy", "--conf",
                         "spark.driver.extraJavaOptions=-Xmx234m -Dlog4j.configuration=spark-log4j.properties", "--conf",
                         "spark.executor.extraClassPath=$PWD/*", "--conf", "spark.driver.extraClassPath=$PWD/*", "--conf",
@@ -383,17 +386,17 @@ public class TestSparkArgsExtractor {
         final List<String> sparkArgs = new SparkArgsExtractor(actionConf).extract(new String[0]);
 
         assertContainsSublist(
-                Lists.newArrayList("--conf", "spark.executor.extraClassPath=/etc/hbase/conf:/etc/hive/conf:$PWD/*"),
+                Arrays.asList("--conf", "spark.executor.extraClassPath=/etc/hbase/conf:/etc/hive/conf:$PWD/*"),
                 sparkArgs);
         assertContainsSublist(
-                Lists.newArrayList("--conf", "spark.driver.extraClassPath=/etc/hbase/conf:/etc/hive/conf:$PWD/*"),
+                Arrays.asList("--conf", "spark.driver.extraClassPath=/etc/hbase/conf:/etc/hive/conf:$PWD/*"),
                 sparkArgs);
         assertContainsSublist(
-                Lists.newArrayList("--conf", "spark.executor.extraJavaOptions=-XX:+UseG1GC -XX:+PrintGC " +
+                Arrays.asList("--conf", "spark.executor.extraJavaOptions=-XX:+UseG1GC -XX:+PrintGC " +
                         "-XX:+UnlockExperimentalVMOptions -Dlog4j.configuration=spark-log4j.properties"),
                 sparkArgs);
         assertContainsSublist(
-                Lists.newArrayList("--conf", "spark.driver.extraJavaOptions=-XX:+UseG1GC -XX:+PrintGC " +
+                Arrays.asList("--conf", "spark.driver.extraJavaOptions=-XX:+UseG1GC -XX:+PrintGC " +
                         "-XX:+UnlockExperimentalVMOptions -Dlog4j.configuration=spark-log4j.properties"),
                 sparkArgs);
     }
@@ -490,7 +493,8 @@ public class TestSparkArgsExtractor {
         final File file = new File(SPARK_DEFAULTS_GENERATED_PROPERTIES);
         file.deleteOnExit();
         final Properties properties = new Properties();
-        try(final FileReader reader = new FileReader(file)) {
+        try(final Reader reader = new InputStreamReader(
+                new FileInputStream(file), StandardCharsets.UTF_8)) {
             properties.load(reader);
         }
         return properties;
@@ -499,7 +503,8 @@ public class TestSparkArgsExtractor {
     private void createTemporaryFileWithContent(String filename, String content) throws IOException {
         final File file = new File(filename);
         file.deleteOnExit();
-        try(final FileWriter fileWriter = new FileWriter(file)) {
+        try(final Writer fileWriter = new OutputStreamWriter(
+                new FileOutputStream(file), StandardCharsets.UTF_8)) {
             fileWriter.write(content);
         }
     }
