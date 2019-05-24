@@ -34,7 +34,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.google.common.base.Strings;
-import com.google.common.collect.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataOutputStream;
@@ -185,7 +184,7 @@ public class V1JobsServlet extends BaseJobsServlet {
     }
 
     private List<String> findAppPathsWithFileNames(final String appPaths, final String defaultFileName) {
-        final List<String> appPathsWithFileNames = Lists.newArrayList();
+        final List<String> appPathsWithFileNames = new ArrayList<>();
 
         if (Strings.isNullOrEmpty(appPaths)) {
             return appPathsWithFileNames;
@@ -247,7 +246,8 @@ public class V1JobsServlet extends BaseJobsServlet {
             try (final FSDataOutputStream target = dfs.create(path)) {
                 LOG.debug("HDFS path [{0}] created.", path.toString());
 
-                IOUtils.copyCharStream(new StringReader(sourceContent), new OutputStreamWriter(target, StandardCharsets.UTF_8));
+                IOUtils.copyCharStream(new StringReader(sourceContent), new OutputStreamWriter(target,
+                        StandardCharsets.UTF_8));
             }
 
             LOG.debug("XML written to HDFS file [{0}].", path.toString());
