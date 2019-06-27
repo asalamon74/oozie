@@ -35,13 +35,13 @@
     <licenses>
         <license>
             <name>The Apache Software License, Version 2.0</name>
-            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
         </license>
     </licenses>
 
     <organization>
         <name>Apache Software Foundation</name>
-        <url>http://www.apache.org</url>
+        <url>https://www.apache.org</url>
     </organization>
 
     <properties>
@@ -91,20 +91,21 @@
 
 
          <!-- Sharelib component versions -->
-         <hive.version>1.2.0</hive.version>
+         <hive.version>1.2.2</hive.version>
          <hive.jline.version>2.12</hive.jline.version>
          <pig.version>0.16.0</pig.version>
          <pig.classifier>h2</pig.classifier>
          <hive.classifier>core</hive.classifier>
-         <sqoop.version>1.4.3</sqoop.version>
+         <sqoop.version>1.4.7</sqoop.version>
          <spark.version>1.6.1</spark.version>
          <spark.streaming.kafka.version>1.6.1</spark.streaming.kafka.version>
          <spark.bagel.version>1.6.1</spark.bagel.version>
          <spark.guava.version>14.0.1</spark.guava.version>
          <spark.scala.binary.version>2.10</spark.scala.binary.version>
-         <sqoop.classifier>hadoop200</sqoop.classifier>
+         <sqoop.classifier>hadoop260</sqoop.classifier>
          <tez.version>0.8.4</tez.version>
          <joda.time.version>2.9.9</joda.time.version>
+         <avro.version>1.8.2</avro.version>
 
          <jetty.version>9.3.27.v20190418</jetty.version>
          <apache.jsp.version>8.0.33</apache.jsp.version>
@@ -145,7 +146,7 @@
     <repositories>
         <repository>
             <id>central</id>
-            <url>http://repo1.maven.org/maven2</url>
+            <url>https://repo1.maven.org/maven2</url>
             <snapshots>
                 <enabled>false</enabled>
             </snapshots>
@@ -159,9 +160,8 @@
             </snapshots>
         </repository>
         <repository>
-            <id>datanucleus</id>
-            <url>http://www.datanucleus.org/downloads/maven2</url>
-            <name>Datanucleus</name>
+            <id>redhat</id>
+            <url>https://maven.repository.redhat.com/ga/</url>
             <snapshots>
                 <enabled>false</enabled>
             </snapshots>
@@ -520,6 +520,13 @@
                         <groupId>org.apache.hadoop</groupId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.hadoop</groupId>
+                <artifactId>hadoop-yarn-registry</artifactId>
+                <version>${hadoop.version}</version>
+                <scope>compile</scope>
             </dependency>
 
             <dependency>
@@ -1576,9 +1583,9 @@
 
             <!-- Fluent Job API conversion to XML -->
             <dependency>
-                <groupId>net.sf.dozer</groupId>
-                <artifactId>dozer</artifactId>
-                <version>5.5.1</version>
+                <groupId>com.github.dozermapper</groupId>
+                <artifactId>dozer-core</artifactId>
+                <version>6.4.1</version>
             </dependency>
             <dependency>
                 <groupId>org.jvnet.jaxb2_commons</groupId>
@@ -1589,11 +1596,6 @@
                 <groupId>org.jvnet.jaxb2_commons</groupId>
                 <artifactId>jaxb2-namespace-prefix</artifactId>
                 <version>1.3</version>
-            </dependency>
-            <dependency>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>jaxb2-maven-plugin</artifactId>
-                <version>2.2</version>
             </dependency>
 
             <dependency>
@@ -1623,7 +1625,7 @@
             <dependency>
                 <groupId>com.google.code.gson</groupId>
                 <artifactId>gson</artifactId>
-                <version>2.7</version>
+                <version>2.8.5</version>
             </dependency>
             <dependency>
                 <groupId>com.google.inject</groupId>
@@ -1687,6 +1689,30 @@
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-plus</artifactId>
                 <version>${jetty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.avro</groupId>
+                <artifactId>avro</artifactId>
+                <version>${avro.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.avro</groupId>
+                <artifactId>avro-mapred</artifactId>
+                <version>${avro.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.avro</groupId>
+                <artifactId>avro-mapred</artifactId>
+                <classifier>hadoop2</classifier>
+                <version>${avro.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.avro</groupId>
+                <artifactId>avro-ipc</artifactId>
+                <version>${avro.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -1830,11 +1856,6 @@
                             </fileset>
                        </filesets>
                     </configuration>
-                </plugin>
-                <plugin>
-                    <groupId>org.codehaus.mojo</groupId>
-                    <artifactId>jaxb2-maven-plugin</artifactId>
-                    <version>2.3.1</version>
                 </plugin>
             </plugins>
         </pluginManagement>
