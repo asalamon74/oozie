@@ -36,6 +36,7 @@ import org.apache.oozie.util.XLog;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.util.Objects;
 
 public class HadoopTokenHelper {
     /** The Kerberos principal for the resource manager.*/
@@ -61,7 +62,7 @@ public class HadoopTokenHelper {
      * {@link SecurityUtil#getServerPrincipal(String, String)}
      */
     private String getServerPrincipal(final Configuration configuration, final String servicePrincipal) throws IOException {
-        Preconditions.checkNotNull(configuration, "configuration has to be filled");
+        Objects.requireNonNull(configuration, "configuration has to be filled");
         Preconditions.checkArgument(!Strings.isNullOrEmpty(servicePrincipal), "servicePrincipal has to be filled");
         Preconditions.checkArgument(!Strings.isNullOrEmpty(configuration.get(HADOOP_YARN_RM)),
                 String.format("configuration entry %s has to be filled", HADOOP_YARN_RM));
@@ -74,7 +75,8 @@ public class HadoopTokenHelper {
             serverPrincipal = SecurityUtil.getServerPrincipal(servicePrincipal, addr);
             LOG.info("Delegation Token Renewer details: Principal={0},Target={1}", serverPrincipal, target);
         } catch (final IllegalArgumentException iae) {
-            LOG.warn("An error happened while trying to get server principal. Getting it from service principal anyway.", iae);
+            LOG.warn("An error happened while trying to get server principal. Getting it from service principal anyway.");
+            LOG.trace(iae);
 
             serverPrincipal = servicePrincipal.split("[/@]")[0];
             LOG.info("Delegation Token Renewer for {0} is {1}", target, serverPrincipal);
