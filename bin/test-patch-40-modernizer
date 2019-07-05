@@ -99,10 +99,32 @@ check_modernizer_errors() {
     patchModernizerErrors=$(grep -c '.*ERROR.*Prefer' "${REPORTDIR}/${TASKNAME}-patch.txt")
     echo "[TRACE] Modernizer errors after patch: $patchModernizerErrors"
     newModernizerErrors=$(( patchModernizerErrors - cleanModernizerErrors))
+
     if [ $newModernizerErrors -gt 0 ] ; then
         REPORT+=("{color:red}-1{color} the patch seems to introduce $newModernizerErrors new modernizer error(s)")
-        return 1
     fi
+
+    if [ $newModernizerErrors -lt 0 ] ; then
+        fixedModernizerErrors=$((-newModernizerErrors))
+        REPORT+=("{color:red}+1{color} the patch fixes $fixedModernizerErrors modernizer error(s)")
+    fi
+
+    cleanClassLines=$(grep '.*ERROR.*Prefer' "${REPORTDIR}/${TASKNAME}-clean.txt" | sed -E "s@.*${BASEDIR}([^:]*):.*@\\1@g" | sort | uniq -c)
+    patchClassLines=$(grep '.*ERROR.*Prefer' "${REPORTDIR}/${TASKNAME}-patch.txt" | sed -E "s@.*${BASEDIR}([^:]*):.*@\\1@g" | sort | uniq -c)
+
+    diffClassLines=$(diff <(echo "$cleanClassLines") <(echo "$patchClassLines") | grep '>\s*[^-]' | awk '{ print $3}')
+    if [ ! -z "${diffClassLines}" ]; then
+      for line in $diffClassLines; do
+        oldErrorNumInClass=$(grep -c "$line" "${REPORTDIR}/${TASKNAME}-clean.txt")
+        newErrorNumInClass=$(grep -c "$line" "${REPORTDIR}/${TASKNAME}-patch.txt")
+        newErrorInClass=$(( newErrorNumInClass - oldErrorNumInClass ))
+        if [ $newErrorInClass -gt 0 ] ; then
+            REPORT+=("{color:red}-1{color} the patch introduces $newErrorInClass new warnings in $line")
+        fi
+      done
+      return 1
+    fi
+
     return 0
 }
 
@@ -124,6 +146,7 @@ case $OP in
     else
       echo "{color:red}-1 ${TASKNAME}{color}" >> "$SUMMARYFILE"
     fi
+    #echo ${BASEDIR} >> "$SUMMARYFILE"
     for line in "${REPORT[@]}" ; do
       echo ".    ${line}" >> "$SUMMARYFILE"
     done
