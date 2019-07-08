@@ -60,7 +60,7 @@ parseArgs() {
       ;;
     esac
   done
-  if [[ "${TASKNAME}" == "" || "${OP}" == "" || "${TEMPDIR}" == "" || "${REPORTDIR}" == "" || "${SUMMARYFILE}" == "" || "${PATCHFILE}" == "" ]] ; then
+  if [[ -z "${TASKNAME}" || -z "${OP}" || -z "${TEMPDIR}" || -z "${REPORTDIR}" || -z "${SUMMARYFILE}" || -z "${PATCHFILE}" ]]; then
     echo "Missing options"
     echo
     printUsage
@@ -78,13 +78,14 @@ parseArgs() {
 verify_and_save_modernizer_output() {
   BRANCH_LABEL=$1
   REPORT_SUFFIX=$2
+  output_txt=${REPORTDIR}/${TASKNAME}-${REPORT_SUFFIX}.txt
 
   echo "[TRACE] Saving modernizer output in ${BRANCH_LABEL}"
-  echo "[TRACE] mvn clean compile modernizer:modernizer ${MVNPASSTHRU} | tee ${REPORTDIR}/${TASKNAME}-${REPORT_SUFFIX}.txt >> ${STDOUT}"
+  echo "[TRACE] mvn clean compile modernizer:modernizer ${MVNPASSTHRU} | tee ${output_txt} >> ${STDOUT}"
 
-  mvn clean compile modernizer:modernizer ${MVNPASSTHRU} | tee "${REPORTDIR}/${TASKNAME}-${REPORT_SUFFIX}.txt" >> ${STDOUT}
+  mvn clean compile modernizer:modernizer ${MVNPASSTHRU} | tee "${output_txt}" >> ${STDOUT}
   exitCode=${PIPESTATUS[0]}
-  if [[ "$exitCode" == "0" ]] ; then
+  if [[ "${exitCode}" == "0" ]] ; then
     REPORT+=("{color:green}+1{color} ${BRANCH_LABEL} produces modernizer output")
   else
     REPORT+=("{color:red}-1{color} ${BRANCH_LABEL} does not produce modernizer output")
@@ -94,9 +95,11 @@ verify_and_save_modernizer_output() {
 }
 
 check_modernizer_errors() {
-    cleanModernizerErrors=$(grep -c '.*ERROR.*Prefer' "${REPORTDIR}/${TASKNAME}-clean.txt")
+    output_txt_clean="${REPORTDIR}/${TASKNAME}-clean.txt"
+    output_txt_patch="${REPORTDIR}/${TASKNAME}-patch.txt"
+    cleanModernizerErrors=$(grep -c '.*ERROR.*Prefer' "${output_txt_clean}")
     echo "[TRACE] Modernizer errors before patch: $cleanModernizerErrors"
-    patchModernizerErrors=$(grep -c '.*ERROR.*Prefer' "${REPORTDIR}/${TASKNAME}-patch.txt")
+    patchModernizerErrors=$(grep -c '.*ERROR.*Prefer' "${output_txt_patch}")
     echo "[TRACE] Modernizer errors after patch: $patchModernizerErrors"
     newModernizerErrors=$(( patchModernizerErrors - cleanModernizerErrors))
 
@@ -108,18 +111,19 @@ check_modernizer_errors() {
         fixedModernizerErrors=$((-newModernizerErrors))
         REPORT+=("{color:red}+1{color} the patch fixes $fixedModernizerErrors modernizer error(s)")
     fi
+    sed_extract="s@.*${BASEDIR}([^:]*):.*@\\1@g"
 
-    cleanClassLines=$(grep '.*ERROR.*Prefer' "${REPORTDIR}/${TASKNAME}-clean.txt" | sed -E "s@.*${BASEDIR}([^:]*):.*@\\1@g" | sort | uniq -c)
-    patchClassLines=$(grep '.*ERROR.*Prefer' "${REPORTDIR}/${TASKNAME}-patch.txt" | sed -E "s@.*${BASEDIR}([^:]*):.*@\\1@g" | sort | uniq -c)
+    cleanClassLines=$(grep '.*ERROR.*Prefer' "${output_txt_clean}" | sed -E "${sed_extract}" | sort | uniq -c)
+    patchClassLines=$(grep '.*ERROR.*Prefer' "${output_txt_patch}" | sed -E "${sed_extract}" | sort | uniq -c)
 
-    diffClassLines=$(diff <(echo "$cleanClassLines") <(echo "$patchClassLines") | grep '>\s*[^-]' | awk '{ print $3}')
+    diffClassLines=$(diff <(echo "${cleanClassLines}") <(echo "${patchClassLines}") | grep '>\s*[^-]' | awk '{ print $3}')
     if [ ! -z "${diffClassLines}" ]; then
-      for line in $diffClassLines; do
-        oldErrorNumInClass=$(grep -c "$line" "${REPORTDIR}/${TASKNAME}-clean.txt")
-        newErrorNumInClass=$(grep -c "$line" "${REPORTDIR}/${TASKNAME}-patch.txt")
+      for class_name in ${diffClassLines}; do
+        oldErrorNumInClass=$(grep -c "${class_name}" "${output_txt_clean}")
+        newErrorNumInClass=$(grep -c "${class_name}" "${output_txt_patch}")
         newErrorInClass=$(( newErrorNumInClass - oldErrorNumInClass ))
         if [ $newErrorInClass -gt 0 ] ; then
-            REPORT+=("{color:red}-1{color} the patch introduces $newErrorInClass new warnings in $line")
+            REPORT+=("{color:red}-1{color} the patch introduces ${newErrorInClass} new warnings in ${class_name}")
         fi
       done
       return 1
@@ -146,7 +150,6 @@ case $OP in
     else
       echo "{color:red}-1 ${TASKNAME}{color}" >> "$SUMMARYFILE"
     fi
-    #echo ${BASEDIR} >> "$SUMMARYFILE"
     for line in "${REPORT[@]}" ; do
       echo ".    ${line}" >> "$SUMMARYFILE"
     done
