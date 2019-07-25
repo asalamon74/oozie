@@ -98,11 +98,11 @@ check_modernizer_errors() {
     echo "[TRACE] Modernizer errors after patch: $patchModernizerErrors"
     newModernizerErrors=$(( patchModernizerErrors - cleanModernizerErrors))
 
-    if ! grep -lq 'EXITVALUE 0' output_txt_clean; then
+    if ! grep -lq 'EXITVALUE 0' "${output_txt_clean}"; then
         REPORT+=("{color:red}-1{color} Error during executing modernizer plugin on HEAD")
         return 1
     fi
-    if ! grep -lq 'EXITVALUE 0' output_txt_patch; then
+    if ! grep -lq 'EXITVALUE 0' "${output_txt_patch}"; then
         REPORT+=("{color:red}-1{color} Error during executing modernizer plugin on PATCH")
         return 1
     fi
