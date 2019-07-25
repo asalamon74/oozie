@@ -117,7 +117,7 @@ check_modernizer_errors() {
     patchClassLines=$(grep '.*ERROR.*Prefer' "${output_txt_patch}" | sed -E "${sed_extract}" | sort | uniq -c)
 
     diffClassLines=$(diff <(echo "${cleanClassLines}") <(echo "${patchClassLines}") | grep '>\s*[^-]' | awk '{ print $3}')
-    if [ ! -z "${diffClassLines}" ]; then
+    if [ -n "${diffClassLines}" ]; then
       for class_name in ${diffClassLines}; do
         oldErrorNumInClass=$(grep -c "${class_name}" "${output_txt_clean}")
         newErrorNumInClass=$(grep -c "${class_name}" "${output_txt_patch}")
