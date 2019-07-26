@@ -55,8 +55,17 @@ parseArgs() {
     --summaryfile=*)
       SUMMARYFILE=${i#*=}
       ;;
+    --verbose)
+      STDOUT="/dev/stdout"
+      ;;
     --patchfile=*)
       PATCHFILE=${i#*=}
+      ;;
+    -D*)
+      MVNPASSTHRU="${MVNPASSTHRU} $i"
+      ;;
+    -P*)
+      MVNPASSTHRU="${MVNPASSTHRU} $i"
       ;;
     esac
   done
