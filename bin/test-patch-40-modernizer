@@ -101,8 +101,10 @@ verify_and_save_modernizer_output() {
 check_modernizer_errors() {
     output_txt_clean="${REPORTDIR}/${TASKNAME}-clean.txt"
     output_txt_patch="${REPORTDIR}/${TASKNAME}-patch.txt"
+    echo "[TRACE] grep -c '.*ERROR.*Prefer' ${output_txt_clean}"
     cleanModernizerErrors=$(grep -c '.*ERROR.*Prefer' "${output_txt_clean}")
     echo "[TRACE] Modernizer errors before patch: $cleanModernizerErrors"
+    echo "[TRACE] grep -c '.*ERROR.*Prefer' ${output_txt_patch}"
     patchModernizerErrors=$(grep -c '.*ERROR.*Prefer' "${output_txt_patch}")
     echo "[TRACE] Modernizer errors after patch: $patchModernizerErrors"
     newModernizerErrors=$(( patchModernizerErrors - cleanModernizerErrors))
