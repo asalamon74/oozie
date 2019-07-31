@@ -94,7 +94,7 @@ verify_and_save_modernizer_output() {
 
   mvn clean compile modernizer:modernizer ${MVNPASSTHRU} | tee "${output_txt}" >> ${STDOUT}
   exitCode=${PIPESTATUS[0]}
-  echo "EXITVALUE $exitCode" | tee "${output_txt}";
+  echo "EXITVALUE $exitCode" | tee -a "${output_txt}"
   echo "[TRACE] Modernizer output in ${BRANCH_LABEL} verified and saved"
 }
 
