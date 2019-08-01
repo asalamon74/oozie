@@ -124,7 +124,7 @@ check_modernizer_errors() {
 
     if [ $newModernizerErrors -lt 0 ] ; then
         fixedModernizerErrors=$((-newModernizerErrors))
-        REPORT+=("{color:red}+1{color} the patch fixes $fixedModernizerErrors modernizer error(s)")
+        REPORT+=("{color:green}+1{color} the patch fixes $fixedModernizerErrors modernizer error(s)")
     fi
     sed_extract="s@.*${BASEDIR}([^:]*):.*@\\1@g"
 
