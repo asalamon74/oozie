@@ -205,7 +205,16 @@ public class CoordOldInputDependency implements CoordInputDependency {
         String user = ParamChecker.notEmpty(conf.get(OozieClient.USER_NAME), OozieClient.USER_NAME);
         for (int i = 0; i < uriList.length; i++) {
             if (allExists) {
-                allExists = pathExists(coordAction, uriList[i], conf, user);
+                try {
+                    allExists = pathExists(coordAction, uriList[i], conf, user);
+                }
+                catch (IOException e){
+                    for(int j = i; j < uriList.length; j++){
+                        nonExistList.append(nonExistSeparator).append(uriList[j]);
+                        nonExistSeparator = CoordELFunctions.INSTANCE_SEPARATOR;
+                    }
+                    throw e;
+                }
                 log.info("[" + coordAction.getId() + "]::ActionInputCheck:: File:" + uriList[i] + ", Exists? :"
                         + allExists);
             }
@@ -289,7 +298,7 @@ public class CoordOldInputDependency implements CoordInputDependency {
                 String unResolvedInstance = dEvent
                         .getChild(CoordCommandUtils.UNRESOLVED_INSTANCES_TAG, dEvent.getNamespace()).getTextTrim();
                 String unresolvedList[] = unResolvedInstance.split(CoordELFunctions.INSTANCE_SEPARATOR);
-                StringBuffer resolvedTmp = new StringBuffer();
+                StringBuilder resolvedTmp = new StringBuilder();
                 for (int i = 0; i < unresolvedList.length; i++) {
                     String returnData = CoordELFunctions.evalAndWrap(eval, unresolvedList[i]);
                     Boolean isResolved = (Boolean) eval.getVariable(CoordELConstants.IS_RESOLVED);

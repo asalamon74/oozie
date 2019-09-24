@@ -170,8 +170,17 @@ public class CoordActionInputCheckXCommand extends CoordinatorXCommand<Void> {
             LOG.info("[" + actionId + "]::CoordActionInputCheck:: Missing deps:" + firstMissingDependency + " "
                     + nonResolvedList.toString());
 
+            boolean status = false;
+            try {
+                status = checkResolvedInput(actionXml, existList, nonExistList, actionConf);
+            }
+            catch (Exception e){
+                if(existList.length() > 0){
+                    isChangeInDependency = isChangeInDependency(nonExistList, missingDependencies, nonResolvedList, status);
+                }
+                throw e;
+            }
 
-            boolean status = checkResolvedInput(actionXml, existList, nonExistList, actionConf);
             boolean isPushDependenciesMet = coordPushInputDependency.isDependencyMet();
             if (status && nonResolvedList.length() > 0) {
                 status = (isPushDependenciesMet) ? checkUnResolvedInput(actionXml, actionConf) : false;
@@ -492,8 +501,13 @@ public class CoordActionInputCheckXCommand extends CoordinatorXCommand<Void> {
         }
         try {
             coordAction = jpaService.execute(new CoordActionGetForInputCheckJPAExecutor(actionId));
-            coordJob = CoordJobQueryExecutor.getInstance().get(CoordJobQuery.GET_COORD_JOB_INPUT_CHECK,
-                    coordAction.getJobId());
+            if (coordAction != null){
+                coordJob = CoordJobQueryExecutor.getInstance().get(CoordJobQuery.GET_COORD_JOB_INPUT_CHECK,
+                        coordAction.getJobId());
+            }
+            else {
+                throw new CommandException(ErrorCode.E0605, actionId);
+            }
         }
         catch (JPAExecutorException je) {
             throw new CommandException(je);
